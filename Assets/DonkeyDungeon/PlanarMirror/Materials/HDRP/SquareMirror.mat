@@ -1,0 +1,65 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: SquareMirror
+  m_Shader: {fileID: 4800000, guid: f938d896a5ea8c948be9a8ba7555d95b, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords:
+  - _PUDDLERIPPLES_ON
+  - _REFLECTSKYBOX_ON
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _NoiseTex:
+        m_Texture: {fileID: 2800000, guid: 6cb8b435b04785640b06fe8e0c5e8b8e, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Roughness:
+        m_Texture: {fileID: 2800000, guid: a3d9c3d1bb2485345a36a58cdee566a3, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _StainMask:
+        m_Texture: {fileID: 2800000, guid: 6899d64b93273e14794982f6d27dbedd, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _Distortion: 0
+    - _PuddleDetail: 0.35
+    - _PuddleEdgeSoftness: 0.04
+    - _PuddleMode: 0
+    - _PuddleRippleScale: 24
+    - _PuddleRippleSpeed: 0.35
+    - _PuddleRippleStrength: 0.012
+    - _PuddleRipples: 1
+    - _PuddleScale: 3.5
+    - _PuddleSeed: 1
+    - _PuddleThreshold: 0.5
+    - _PuddleWarp: 1.1
+    - _ReflectSkybox: 1
+    - _RoughnessValue: 0
+    - _StainStrength: 0
+    - _TransparentBg: 0
+    m_Colors:
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1

@@ -1,0 +1,1 @@
+{"name":"DonkeyDungeon.PlanarMirrors.URP","references":["DonkeyDungeon.PlanarMirrors","Unity.RenderPipelines.Universal.Runtime","Unity.RenderPipelines.Core.Runtime"],"defineConstraints":["DD_URP"],"versionDefines":[{"name":"com.unity.render-pipelines.universal","expression":"14.0.0","define":"DD_URP"}]}
