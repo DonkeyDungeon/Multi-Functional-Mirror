@@ -1,6 +1,6 @@
 # Compatibility and validation / 兼容性与验证
 
-Multi-Functional Mirror — release candidate 0.1.0. Publisher draft: DonkeyDungeon. Support: kongtiaoxukun@gmail.com.
+Multi-Functional Mirror — 0.1.0-rc.1. Maintainer: DonkeyDungeon. Support: kongtiaoxukun@gmail.com.
 
 | Pipeline / 管线 | Editor / 编辑器 | Pipeline package | Windows D3D11 | Clean import / 全新导入 |
 |---|---|---|---|---|
@@ -20,4 +20,4 @@ Not certified / 尚未认证：XR、移动端、主机、Unity 6、URP/HDRP 14�
 
 Transparent-background behavior depends on capture alpha and pipeline buffer settings. HDRP projects may require an alpha-capable color buffer. Do not promise this feature works with every project configuration without additional visual testing.
 
-This candidate has not been approved by Unity Asset Store review. Publisher registration, source/license records, official publishing-tool validation, product artwork and pricing remain publisher preparation tasks.
+Release downloads and SHA-256 checksums are provided through GitHub Releases.

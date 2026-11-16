@@ -149,7 +149,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   pipeline: URP
-  reportDirectory: F:\DonkeyDungeonPlanarMirror\Reports\URP-Windows
+  reportDirectory: ../Reports/URP-Windows
 --- !u!4 &38862191
 Transform:
   m_ObjectHideFlags: 0

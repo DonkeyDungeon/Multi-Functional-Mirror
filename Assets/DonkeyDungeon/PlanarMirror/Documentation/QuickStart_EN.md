@@ -1,6 +1,6 @@
-# Multi-Functional Mirror — candidate 0.1.0
+# Multi-Functional Mirror — 0.1.0-rc.1
 
-Publisher draft: DonkeyDungeon  
+Maintainer: DonkeyDungeon  
 Support: kongtiaoxukun@gmail.com
 
 ## Import and place
@@ -44,6 +44,6 @@ Pink surface: check the matching pipeline and shader, then inspect Console error
 
 ## Compatibility and changes
 
-Consult the release's validation report for exact tested combinations. Candidate development targets Built-in and URP plus HDRP 16 on Unity 2023.2; wider version support must be separately tested. Unity 2022.3 is the store minimum, not a blanket compatibility claim for this package.
+Consult the release's validation report for exact tested combinations. Candidate development targets Built-in and URP plus HDRP 16 on Unity 2023.2; wider version support must be separately tested. The tested Unity 2022.3 configuration uses Built-in rendering.
 
-0.1.0 candidate: standalone namespace; removed HS2/BepInEx/Graphics/SSS bridge and external shader inspector; per-surface/per-camera resources; exception-safe culling restoration; independent property blocks; normalized texture names; procedural square/circle meshes; three pipeline material/prefab/demo sets.
+0.1.0-rc.1: standalone namespace; removed HS2/BepInEx/Graphics/SSS bridge and external shader inspector; per-surface/per-camera resources; exception-safe culling restoration; independent property blocks; normalized texture names; procedural square/circle meshes; three pipeline material/prefab/demo sets.
