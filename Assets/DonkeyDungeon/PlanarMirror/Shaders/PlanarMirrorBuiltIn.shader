@@ -157,6 +157,10 @@ Shader "DonkeyDungeon/Planar Mirror/Built-in"
                 v2f o;
                 o.pos = UnityObjectToClipPos(v.vertex);
                 o.screenPos = mul(_DDMirrorReflectionVP, mul(unity_ObjectToWorld, v.vertex));
+                // Map the capture's GPU clip space to the render texture's UV origin.
+                #if UNITY_UV_STARTS_AT_TOP
+                    o.screenPos.y = -o.screenPos.y;
+                #endif
                 o.screenPos.xy = o.screenPos.xy * 0.5 + o.screenPos.w * 0.5;
                 o.uv = TRANSFORM_TEX(v.uv, _NoiseTex);
                 o.uv_Roughness = TRANSFORM_TEX(v.uv, _Roughness);
