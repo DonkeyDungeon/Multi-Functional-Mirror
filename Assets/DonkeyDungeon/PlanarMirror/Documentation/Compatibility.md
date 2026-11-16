@@ -1,8 +1,8 @@
-# Compatibility and validation / 兼容性与验证
+# Compatibility and validation
 
 Multi-Functional Mirror — 0.1.0-rc.1. Maintainer: DonkeyDungeon. Support: kongtiaoxukun@gmail.com.
 
-| Pipeline / 管线 | Editor / 编辑器 | Pipeline package | Windows D3D11 | Clean import / 全新导入 |
+| Pipeline | Editor | Pipeline package | Windows D3D11 | Clean import |
 |---|---|---|---|---|
 | Built-in | 2022.3.51f1 | Built-in | PASS | PASS |
 | URP | 2023.2.20f1c1 | 16.0.6 | PASS | PASS |
@@ -14,9 +14,7 @@ Test hardware: NVIDIA GeForce RTX 4060 Ti. Output: 1280×720. Three surfaces, ea
 
 Verified: actual active renderer; nonempty reflection pixels on square/circle/puddle surfaces; real supplied scratch texture changes final output; distortion changes final output; shared materials retain independent reflection textures; additional camera allocation; destroyed source-camera pruning; disable, re-enable and delete cleanup; no test-time runtime errors. Fresh projects install only the required pipeline, import the exported unitypackage, and repeat the checks.
 
-已验证：运行中的真实管线、三种表面的反射像素、随包划痕贴图的实际效果、扭曲参数、多镜面共享材质隔离、多观察相机分配与销毁清理、禁用/重启/删除资源释放。三种管线均已在 Windows 程序和全新导入工程中通过这些检查。
-
-Not certified / 尚未认证：XR、移动端、主机、Unity 6、URP/HDRP 14、任意第三方后处理、相机堆叠、自定义 Renderer、全面透明背景兼容、全部变换组合、性能宣传数据。No recursive mirror reflections. Scratch intensity is a mask/distortion effect, not physical roughness or blur.
+Validation does not cover XR, mobile, consoles, Unity 6, URP or HDRP 14, arbitrary third-party post-processing, camera stacking, custom renderers, comprehensive transparent-background compatibility, all transform combinations, or performance benchmarks. Reflection capture excludes other PlanarMirror surfaces. Scratch intensity controls a mask and distortion.
 
 Transparent-background behavior depends on capture alpha and pipeline buffer settings. HDRP projects may require an alpha-capable color buffer. Do not promise this feature works with every project configuration without additional visual testing.
 

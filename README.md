@@ -16,7 +16,7 @@ A planar reflection toolkit for Unity. Includes upright square and round mirrors
 
 Choose one pipeline package per project. Toolkit mirror surfaces are excluded from reflection captures. See the [tested configurations and limitations](Assets/DonkeyDungeon/PlanarMirror/Documentation/Compatibility.md).
 
-[English quick start](Assets/DonkeyDungeon/PlanarMirror/Documentation/QuickStart_EN.md) · [中文快速开始](Assets/DonkeyDungeon/PlanarMirror/Documentation/快速开始_中文.md) · [Build packages](#build-packages)
+[Quick start](Assets/DonkeyDungeon/PlanarMirror/Documentation/QuickStart_EN.md) · [Build packages](#build-packages)
 
 ## Build packages
 

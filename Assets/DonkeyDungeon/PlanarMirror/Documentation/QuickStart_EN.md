@@ -28,9 +28,9 @@ The component controls capture settings. The material controls appearance. A cam
 * Mirror Color: tint is applied once after scratch/stain mixing. Alpha controls surface opacity.
 * Normal Map / Distortion Strength: perturb the reflected image.
 * Scratch Mask: green channel. Scratch Intensity blends pale scratch marks and adds normal-driven distortion. This is **not physically rough or blurred reflection**. A neutral normal map still allows visible scratch coloration.
-* Water Stain Mask: alpha channel. Water Stain Strength adds surface marks independently from scratches.
+* Water Stain Mask (Alpha): bright alpha adds stain color and zero alpha leaves the reflection as it is. Water Stain Strength controls the amount. The procedural Puddle Mode controls the water outline.
 * Puddle Mode: procedural alpha silhouette. Threshold controls coverage; Edge Softness smooths edges; Scale, Warp, Detail and Seed control the shape.
-* Water Ripples: animated procedural distortion for puddles, with scale/speed/strength. This is a water-wave effect, not the removed rain system.
+* Water Ripples: animates the UVs used to sample the reflection in Puddle Mode. Scale sets the pattern density, Speed sets its motion, and Strength sets the displacement. Speed 0 holds the pattern still. Use Play Mode or enable Effects > Always Refresh in Scene view to preview the motion.
 
 ## Limitations
 

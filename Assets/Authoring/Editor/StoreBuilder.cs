@@ -163,9 +163,10 @@ public static class StoreBuilder
         light.transform.rotation = Quaternion.Euler(45,-30,0);
         Shader propShader = Shader.Find(pipeline == "HDRP" ? "HDRP/Unlit" : pipeline == "URP" ? "Universal Render Pipeline/Unlit" : "Unlit/Color");
         Color[] colors = { new Color(.8f,.1f,.07f), new Color(.05f,.7f,.22f), new Color(.04f,.3f,.9f) };
+        string[] colorNames = { "Red", "Green", "Blue" };
         for (int i = 0; i < 3; ++i)
         {
-            var mat = Material(Root + "/Materials/" + suffix + "/Prop" + i + ".mat", propShader);
+            var mat = Material(Root + "/Materials/" + suffix + "/" + colorNames[i] + ".mat", propShader);
             foreach (var name in new[] { "_Color", "_BaseColor", "_UnlitColor" }) if (mat.HasProperty(name)) mat.SetColor(name, colors[i]);
             var obj = GameObject.CreatePrimitive(i == 0 ? PrimitiveType.Cube : i == 1 ? PrimitiveType.Sphere : PrimitiveType.Capsule);
             obj.name = "Reflection Subject " + i; obj.transform.position = new Vector3((i-1)*1.5f,1,2);
