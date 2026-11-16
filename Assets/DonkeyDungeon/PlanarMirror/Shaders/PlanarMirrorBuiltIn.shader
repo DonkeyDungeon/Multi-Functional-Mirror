@@ -2,7 +2,8 @@ Shader "DonkeyDungeon/Planar Mirror/Built-in"
 {
     Properties
     {
-        [HideInInspector] _MainTex ("Reflection Texture", 2D) = "white" {}
+        [HideInInspector] _DDMirrorReflectionTex ("Reflection Texture", 2D) = "black" {}
+        [HideInInspector] _DDMirrorHasReflection ("Has Reflection", Float) = 0
         _StainMask ("Water Stain Mask (Alpha)", 2D) = "black" {}
         _StainStrength ("Water Stain Strength", Range(0,1)) = 0
         _Color ("Mirror Color (Tint & Alpha)", Color) = (1, 1, 1, 1)
@@ -14,7 +15,7 @@ Shader "DonkeyDungeon/Planar Mirror/Built-in"
         _Roughness ("Scratch Mask (Green Channel)", 2D) = "black" {}
         _RoughnessValue ("Scratch Intensity", Range(0, 1)) = 0.5
 
-        [HideInInspector] _TransparentBg ("Enable Transparent Background", Float) = 0
+        [HideInInspector] _DDMirrorTransparentBackground ("Enable Transparent Background", Float) = 0
 
         [Toggle] _PuddleMode ("Enable Puddle Mode", Float) = 0
         _PuddleThreshold ("Puddle Threshold (Higher = Less Water)", Range(0, 1)) = 0.5
@@ -66,7 +67,7 @@ Shader "DonkeyDungeon/Planar Mirror/Built-in"
             sampler2D _StainMask;
             float4 _StainMask_ST;
             float _StainStrength;
-            sampler2D _MainTex;
+            sampler2D _DDMirrorReflectionTex;
             sampler2D _NoiseTex;
             float4 _NoiseTex_ST;
 
@@ -87,8 +88,9 @@ Shader "DonkeyDungeon/Planar Mirror/Built-in"
             float _PuddleRippleSpeed;
             float _PuddleRippleStrength;
 
-            float _TransparentBg;
-            float4x4 _ReflectionVP;
+            float _DDMirrorTransparentBackground;
+            float _DDMirrorHasReflection;
+            float4x4 _DDMirrorReflectionVP;
             fixed4 _Color;
             float _Distortion;
 
@@ -154,7 +156,7 @@ Shader "DonkeyDungeon/Planar Mirror/Built-in"
             {
                 v2f o;
                 o.pos = UnityObjectToClipPos(v.vertex);
-                o.screenPos = mul(_ReflectionVP, mul(unity_ObjectToWorld, v.vertex));
+                o.screenPos = mul(_DDMirrorReflectionVP, mul(unity_ObjectToWorld, v.vertex));
                 o.screenPos.xy = o.screenPos.xy * 0.5 + o.screenPos.w * 0.5;
                 o.uv = TRANSFORM_TEX(v.uv, _NoiseTex);
                 o.uv_Roughness = TRANSFORM_TEX(v.uv, _Roughness);
@@ -164,6 +166,7 @@ Shader "DonkeyDungeon/Planar Mirror/Built-in"
 
             fixed4 frag(v2f i) : SV_Target
             {
+                if (_DDMirrorHasReflection < 0.5) return 0;
 
                 float3 normal = UnpackNormal(tex2D(_NoiseTex, i.uv));
 
@@ -183,7 +186,7 @@ Shader "DonkeyDungeon/Planar Mirror/Built-in"
                 i.screenPos.xy += offset;
 
 
-                fixed4 col = tex2Dproj(_MainTex, UNITY_PROJ_COORD(i.screenPos));
+                fixed4 col = tex2Dproj(_DDMirrorReflectionTex, UNITY_PROJ_COORD(i.screenPos));
 
 
 
@@ -195,7 +198,7 @@ Shader "DonkeyDungeon/Planar Mirror/Built-in"
 
 
                 col.rgb *= _Color.rgb;
-                col.a = lerp(1.0, col.a, _TransparentBg) * _Color.a;
+                col.a = lerp(1.0, col.a, _DDMirrorTransparentBackground) * _Color.a;
 
 
                 if (_PuddleMode > 0.5)

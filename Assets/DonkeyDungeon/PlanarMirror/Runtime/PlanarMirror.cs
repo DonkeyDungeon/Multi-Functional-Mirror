@@ -32,7 +32,8 @@ namespace DonkeyDungeon.PlanarMirrors
             public Camera camera;
             public RenderTexture texture;
             public Matrix4x4 projection;
-            public int frame = -1000;
+            public bool hasCapture;
+            public int frame;
             public float usedAt;
         }
         readonly Dictionary<Camera, View> views = new Dictionary<Camera, View>();
@@ -40,11 +41,13 @@ namespace DonkeyDungeon.PlanarMirrors
         static readonly HashSet<PlanarMirror> mirrors = new HashSet<PlanarMirror>();
         static bool rendering;
         public static event System.Action<Camera, Camera> ConfigureReflectionCamera;
-        static readonly int ReflectionTex = Shader.PropertyToID("_MainTex");
-        static readonly int ReflectionVP = Shader.PropertyToID("_ReflectionVP");
-        static readonly int Transparent = Shader.PropertyToID("_TransparentBg");
+        static readonly int ReflectionTex = Shader.PropertyToID("_DDMirrorReflectionTex");
+        static readonly int ReflectionVP = Shader.PropertyToID("_DDMirrorReflectionVP");
+        static readonly int Transparent = Shader.PropertyToID("_DDMirrorTransparentBackground");
+        static readonly int HasReflection = Shader.PropertyToID("_DDMirrorHasReflection");
         Renderer surface;
         MaterialPropertyBlock properties;
+        View boundView;
         Camera[] cameras = new Camera[4];
         public int ActiveViewCount => views.Count;
 
@@ -80,23 +83,44 @@ namespace DonkeyDungeon.PlanarMirrors
         void BindSRP(ScriptableRenderContext context, Camera camera) { Bind(camera); }
         void Bind(Camera camera)
         {
-            if (rendering || !surface || !views.TryGetValue(camera, out var view)) return;
-            surface.GetPropertyBlock(properties);
-            properties.SetTexture(ReflectionTex, view.texture);
-            properties.SetMatrix(ReflectionVP, view.projection);
-            properties.SetFloat(Transparent, transparentBackground ? 1 : 0);
-            surface.SetPropertyBlock(properties);
+            if (rendering || !surface) return;
+            if (CanObserve(camera) && views.TryGetValue(camera, out var view) && view.hasCapture &&
+                view.texture && view.texture.IsCreated() && IsInFront(camera, WorldNormal()))
+                ApplyReflection(view);
+            else
+                ApplyReflection(null);
         }
+
+        void ApplyReflection(View view)
+        {
+            if (view == null && boundView == null) return;
+
+            // Only write mirror-owned properties. Other scripts can update the same block.
+            surface.GetPropertyBlock(properties);
+            properties.SetTexture(ReflectionTex, view == null ? Texture2D.blackTexture : (Texture)view.texture);
+            properties.SetMatrix(ReflectionVP, view == null ? Matrix4x4.identity : view.projection);
+            properties.SetFloat(Transparent, view != null && transparentBackground ? 1 : 0);
+            properties.SetFloat(HasReflection, view == null ? 0 : 1);
+            surface.SetPropertyBlock(properties);
+            boundView = view;
+        }
+
+        bool CanObserve(Camera source) => surface.enabled && source &&
+            source.cameraType != CameraType.Reflection && source.cameraType != CameraType.Preview &&
+            (source.cameraType != CameraType.SceneView || sceneViewPreview) && !source.stereoEnabled &&
+            (source.cullingMask & (1 << gameObject.layer)) != 0;
+
+        Vector3 WorldNormal() => transform.worldToLocalMatrix.transpose.MultiplyVector(localNormal).normalized;
+
+        bool IsInFront(Camera source, Vector3 normal) =>
+            Vector3.Dot(source.transform.position - transform.position, normal) > clipOffset;
 
         /// <summary>Call outside the SRP render loop, after moving the viewing camera.</summary>
         public void RenderForCamera(Camera source)
         {
-            if (rendering || !isActiveAndEnabled || !surface || !surface.enabled || !source ||
-                source.cameraType == CameraType.Reflection || source.cameraType == CameraType.Preview ||
-                (source.cameraType == CameraType.SceneView && !sceneViewPreview) || source.stereoEnabled ||
-                (source.cullingMask & (1 << gameObject.layer)) == 0) return;
-            Vector3 normal = transform.worldToLocalMatrix.transpose.MultiplyVector(localNormal).normalized;
-            if (Vector3.Dot(source.transform.position - transform.position, normal) <= clipOffset) return;
+            if (rendering || !isActiveAndEnabled || !surface || !CanObserve(source)) return;
+            Vector3 normal = WorldNormal();
+            if (!IsInFront(source, normal)) return;
             if (!GeometryUtility.TestPlanesAABB(GeometryUtility.CalculateFrustumPlanes(source), surface.bounds)) return;
             if (!views.TryGetValue(source, out var view))
             {
@@ -109,16 +133,16 @@ namespace DonkeyDungeon.PlanarMirrors
             }
             view.usedAt = Time.realtimeSinceStartup;
             int size = Mathf.Clamp(Mathf.ClosestPowerOfTwo(resolution), 64, 4096);
-            if (!view.texture || view.texture.width != size)
+            if (!view.texture || !view.texture.IsCreated() || view.texture.width != size)
             {
-                if (view.texture) { view.camera.targetTexture = null; view.texture.Release(); DestroyOwned(view.texture); }
+                ReleaseTexture(view);
                 view.texture = new RenderTexture(size, size, 24, RenderTextureFormat.ARGBHalf)
                 { name = "Planar Mirror Reflection RT", hideFlags = HideFlags.HideAndDontSave,
                   useMipMap = false, autoGenerateMips = false, antiAliasing = 1 };
-                view.texture.Create();
-                view.frame = -1000;
+                if (!view.texture.Create()) return;
             }
-            if (Application.isPlaying && Time.frameCount - view.frame < updateEveryFrames) { Bind(source); return; }
+            if (view.hasCapture && Application.isPlaying && Time.frameCount - view.frame < updateEveryFrames) { Bind(source); return; }
+            view.hasCapture = false;
             Camera reflected = view.camera;
             reflected.CopyFrom(source);
             reflected.enabled = false;
@@ -152,13 +176,12 @@ namespace DonkeyDungeon.PlanarMirrors
             reflected.projectionMatrix = captureProjection;
             reflected.projectionMatrix = reflected.CalculateObliqueMatrix(new Vector4(clipNormal.x, clipNormal.y, clipNormal.z, -Vector3.Dot(clipPosition, clipNormal)));
             reflected.cullingMatrix = reflected.projectionMatrix * reflected.worldToCameraMatrix;
-            ConfigureReflectionCamera?.Invoke(source, reflected);
-
             var hidden = new List<KeyValuePair<Renderer, bool>>();
             bool previousCulling = GL.invertCulling;
             rendering = true;
             try
             {
+                ConfigureReflectionCamera?.Invoke(source, reflected);
                 foreach (var mirror in mirrors)
                     if (mirror && mirror.surface)
                     {
@@ -175,12 +198,14 @@ namespace DonkeyDungeon.PlanarMirrors
                 }
                 view.projection = GL.GetGPUProjectionMatrix(reflected.projectionMatrix, true) * reflected.worldToCameraMatrix;
                 view.frame = Time.frameCount;
+                view.hasCapture = true;
             }
             finally
             {
                 GL.invertCulling = previousCulling;
                 foreach (var entry in hidden) if (entry.Key) entry.Key.forceRenderingOff = entry.Value;
                 rendering = false;
+                if (!view.hasCapture && boundView == view && surface) ApplyReflection(null);
             }
             Bind(source);
         }
@@ -200,19 +225,23 @@ namespace DonkeyDungeon.PlanarMirrors
             Camera.onPreCull -= BindBuiltIn;
             RenderPipelineManager.beginCameraRendering -= BindSRP;
             mirrors.Remove(this);
-            if (surface && properties != null)
-            {
-                surface.GetPropertyBlock(properties);
-                properties.SetTexture(ReflectionTex, Texture2D.blackTexture);
-                surface.SetPropertyBlock(properties);
-            }
+            if (surface) ApplyReflection(null);
+            boundView = null;
             foreach (var view in views.Values) Dispose(view);
             views.Clear();
         }
-        static void Dispose(View view)
+        void Dispose(View view)
         {
-            if (view.camera) { view.camera.targetTexture = null; DestroyOwned(view.camera.gameObject); }
+            ReleaseTexture(view);
+            if (view.camera) DestroyOwned(view.camera.gameObject);
+        }
+        void ReleaseTexture(View view)
+        {
+            if (boundView == view && surface) ApplyReflection(null);
+            view.hasCapture = false;
+            if (view.camera) view.camera.targetTexture = null;
             if (view.texture) { view.texture.Release(); DestroyOwned(view.texture); }
+            view.texture = null;
         }
         static void DestroyOwned(Object obj)
         {
@@ -221,7 +250,7 @@ namespace DonkeyDungeon.PlanarMirrors
         void OnDrawGizmosSelected()
         {
             Gizmos.color = Color.cyan;
-            Gizmos.DrawRay(transform.position, transform.worldToLocalMatrix.transpose.MultiplyVector(localNormal).normalized);
+            Gizmos.DrawRay(transform.position, WorldNormal());
         }
     }
 }

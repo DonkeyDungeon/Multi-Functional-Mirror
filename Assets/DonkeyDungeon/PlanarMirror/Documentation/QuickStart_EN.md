@@ -36,7 +36,7 @@ The component controls capture settings. The material controls appearance. A cam
 
 Planar surfaces only. No mirrors reflecting other toolkit mirrors. XR/stereo is skipped and unsupported. Mobile, consoles, ray tracing, camera stacks, custom renderers and third-party post-processing are not certified. URP uses the default renderer; reflections do not copy camera post-processing. HDRP uses its normal rendering machinery without any HS2/Graphics plugin integration or special skin SSS switch. Differences in exposure, volumetrics and screen-space effects need scene-specific assessment.
 
-Captures run late in the update loop, outside the SRP render loop. Camera movement after the toolkit's update can produce a one-frame mismatch. Keep camera controllers earlier than execution order 10000, or explicitly call `RenderForCamera` after moving the camera and before rendering. Per-camera property blocks prevent shared-material texture overwrites. Existing renderer-level property-block values are preserved; applications using material-index property blocks must integrate the reflection properties themselves.
+Captures run late in the update loop, outside the SRP render loop. Camera movement after the toolkit's update can produce a one-frame mismatch. Keep camera controllers earlier than execution order 10000, or explicitly call `RenderForCamera` after moving the camera and before rendering. The supplied shaders render the surface as transparent when the current camera has no valid capture or the mirror component is disabled. The component writes only its own `_DDMirror`-prefixed properties in the renderer property block. Applications using material-index property blocks must integrate those reflection properties themselves.
 
 ## Troubleshooting
 

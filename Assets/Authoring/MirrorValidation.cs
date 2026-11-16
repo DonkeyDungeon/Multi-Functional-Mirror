@@ -7,6 +7,8 @@ using DonkeyDungeon.PlanarMirrors;
 
 public sealed class MirrorValidation : MonoBehaviour
 {
+    const string ReflectionTexture = "_DDMirrorReflectionTex";
+    const string HasReflection = "_DDMirrorHasReflection";
     public string pipeline;
     public string reportDirectory;
     int errors;
@@ -34,7 +36,7 @@ public sealed class MirrorValidation : MonoBehaviour
             {
                 Check(mirror.ActiveViewCount > 0, mirror.name + " allocated its own reflection");
                 var block = new MaterialPropertyBlock(); mirror.GetComponent<Renderer>().GetPropertyBlock(block);
-                var texture = block.GetTexture("_MainTex") as RenderTexture;
+                var texture = block.GetTexture(ReflectionTexture) as RenderTexture;
                 Check(texture && texture.IsCreated(), mirror.name + " reflection created");
                 var pixels = Read(texture);
                 File.WriteAllBytes(reportDirectory + "/" + mirror.name + "-reflection.png", pixels.EncodeToPNG());
@@ -58,8 +60,8 @@ public sealed class MirrorValidation : MonoBehaviour
         {
             var a = new MaterialPropertyBlock(); var b = new MaterialPropertyBlock();
             square.GetComponent<Renderer>().GetPropertyBlock(a); round.GetComponent<Renderer>().GetPropertyBlock(b);
-            Check(a.GetTexture("_MainTex") != b.GetTexture("_MainTex"), "Shared material keeps independent reflection textures");
-            Check(!(material.GetTexture("_MainTex") is RenderTexture), "Shared material not overwritten");
+            Check(a.GetTexture(ReflectionTexture) != b.GetTexture(ReflectionTexture), "Shared material keeps independent reflection textures");
+            Check(!(material.GetTexture(ReflectionTexture) is RenderTexture), "Shared material not overwritten");
             report += "Shared-material isolation: PASS\n";
         }
         catch (Exception e) { Finish(false, report + e); yield break; }
@@ -81,15 +83,45 @@ public sealed class MirrorValidation : MonoBehaviour
         try { Check(delta > .0001f, "Distortion changes final pixels: " + delta); report += "Distortion image difference: " + delta + "\n"; }
         catch (Exception e) { Finish(false, report + e); yield break; }
         square.GetComponent<Renderer>().sharedMaterial = material; Destroy(instance);
+        var squareRenderer = square.GetComponent<Renderer>();
+        var squareProperties = new MaterialPropertyBlock();
+        squareRenderer.GetPropertyBlock(squareProperties);
+        squareProperties.SetTexture("_MainTex", Texture2D.whiteTexture);
+        squareProperties.SetFloat("_ColorInfluence", 0.37f);
+        squareRenderer.SetPropertyBlock(squareProperties);
+        var primaryReflection = squareProperties.GetTexture(ReflectionTexture) as RenderTexture;
+
         var second = new GameObject("Second viewing camera", typeof(Camera)).GetComponent<Camera>();
-        second.CopyFrom(camera); second.enabled = false; second.targetTexture = null;
+        second.CopyFrom(camera); second.enabled = false;
+        var secondOutput = new RenderTexture(320, 180, 24, RenderTextureFormat.ARGB32);
+        second.targetTexture = secondOutput;
         second.transform.SetPositionAndRotation(camera.transform.position + Vector3.right * .2f, camera.transform.rotation);
         try
         {
+            Check(primaryReflection && squareProperties.GetFloat(HasReflection) == 1, "Primary camera has a valid reflection");
+            RenderCamera(second);
+            squareRenderer.GetPropertyBlock(squareProperties);
+            Check(squareProperties.GetFloat(HasReflection) == 0 &&
+                  squareProperties.GetTexture(ReflectionTexture) == Texture2D.blackTexture,
+                  "Camera without a capture does not inherit the primary camera's reflection");
+
             foreach (var mirror in mirrors) { mirror.RenderForCamera(second); Check(mirror.ActiveViewCount == 2, "Independent second camera view"); }
-            report += "Second-camera allocation: PASS\n";
+            RenderCamera(second);
+            squareRenderer.GetPropertyBlock(squareProperties);
+            var secondReflection = squareProperties.GetTexture(ReflectionTexture) as RenderTexture;
+            Check(secondReflection && secondReflection != primaryReflection && squareProperties.GetFloat(HasReflection) == 1,
+                  "Second camera binds its own valid reflection");
+            RenderCamera(camera);
+            squareRenderer.GetPropertyBlock(squareProperties);
+            Check(squareProperties.GetTexture(ReflectionTexture) == primaryReflection, "Switching back restores the primary reflection");
+            RenderCamera(second);
+            squareRenderer.GetPropertyBlock(squareProperties);
+            Check(squareProperties.GetTexture(ReflectionTexture) == secondReflection, "Switching again restores the second reflection");
+            report += "Second-camera fallback and switching: PASS\n";
         }
         catch (Exception e) { Finish(false, report + e); yield break; }
+        second.targetTexture = null;
+        Destroy(secondOutput);
         Destroy(second.gameObject);
         yield return new WaitForSecondsRealtime(10.5f);
         try
@@ -105,6 +137,12 @@ public sealed class MirrorValidation : MonoBehaviour
             Check(mirrors.All(m => m.ActiveViewCount == 0), "Disable releases all per-view records");
             Check(Resources.FindObjectsOfTypeAll<Camera>().All(c => c.name != "Planar Mirror Reflection"), "No orphan reflection cameras");
             Check(Resources.FindObjectsOfTypeAll<RenderTexture>().All(t => t.name != "Planar Mirror Reflection RT"), "No orphan reflection textures");
+            squareRenderer.GetPropertyBlock(squareProperties);
+            Check(squareProperties.GetTexture("_MainTex") == Texture2D.whiteTexture, "Disable preserves the external main texture");
+            Check(Mathf.Approximately(squareProperties.GetFloat("_ColorInfluence"), 0.37f), "Disable preserves other renderer overrides");
+            Check(squareProperties.GetFloat(HasReflection) == 0 &&
+                  squareProperties.GetTexture(ReflectionTexture) == Texture2D.blackTexture,
+                  "Disable removes the captured texture from the renderer");
             report += "Disable resource cleanup: PASS\n";
         }
         catch (Exception e) { Finish(false, report + e); yield break; }
@@ -124,14 +162,16 @@ public sealed class MirrorValidation : MonoBehaviour
     }
     static IEnumerator Frames(int count) { for (int i = 0; i < count; i++) yield return null; }
     static void Check(bool condition, string message) { if (!condition) throw new Exception(message); }
+    static void RenderCamera(Camera camera)
+    {
+        if (!UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline) camera.Render();
+        else UnityEngine.Rendering.RenderPipeline.SubmitRenderRequest(camera,
+            new UnityEngine.Rendering.RenderPipeline.StandardRequest { destination = camera.targetTexture });
+    }
     static Texture2D Read(RenderTexture target)
     {
         var camera = Camera.main;
-        if (camera && camera.targetTexture == target)
-        {
-            if (!UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline) camera.Render();
-            else UnityEngine.Rendering.RenderPipeline.SubmitRenderRequest(camera, new UnityEngine.Rendering.RenderPipeline.StandardRequest { destination = target });
-        }
+        if (camera && camera.targetTexture == target) RenderCamera(camera);
         var old = RenderTexture.active;
         try
         {
