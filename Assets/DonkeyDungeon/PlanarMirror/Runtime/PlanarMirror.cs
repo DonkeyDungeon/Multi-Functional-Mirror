@@ -39,6 +39,10 @@ namespace DonkeyDungeon.PlanarMirrors
         readonly Dictionary<Camera, View> views = new Dictionary<Camera, View>();
         readonly List<Camera> expired = new List<Camera>();
         static readonly HashSet<PlanarMirror> mirrors = new HashSet<PlanarMirror>();
+        static readonly List<KeyValuePair<Renderer, bool>> hiddenSurfaces = new List<KeyValuePair<Renderer, bool>>();
+#if UNITY_EDITOR
+        static readonly List<PlanarMirror> previewMirrors = new List<PlanarMirror>();
+#endif
         static bool rendering;
         public static event System.Action<Camera, Camera> ConfigureReflectionCamera;
         static readonly int ReflectionTex = Shader.PropertyToID("_DDMirrorReflectionTex");
@@ -49,6 +53,7 @@ namespace DonkeyDungeon.PlanarMirrors
         MaterialPropertyBlock properties;
         View boundView;
         Camera[] cameras = new Camera[4];
+        readonly Plane[] frustumPlanes = new Plane[6];
         public int ActiveViewCount => views.Count;
 
         void OnEnable()
@@ -115,13 +120,29 @@ namespace DonkeyDungeon.PlanarMirrors
         bool IsInFront(Camera source, Vector3 normal) =>
             Vector3.Dot(source.transform.position - transform.position, normal) > clipOffset;
 
+#if UNITY_EDITOR
+        /// <summary>Capture the active mirrors before drawing a Scene view camera.</summary>
+        public static void RenderSceneView(Camera camera)
+        {
+            if (rendering || !camera || camera.cameraType != CameraType.SceneView) return;
+            previewMirrors.AddRange(mirrors);
+            try
+            {
+                foreach (var mirror in previewMirrors)
+                    if (mirror && mirror.sceneViewPreview) mirror.RenderForCamera(camera);
+            }
+            finally { previewMirrors.Clear(); }
+        }
+#endif
+
         /// <summary>Call outside the SRP render loop, after moving the viewing camera.</summary>
         public void RenderForCamera(Camera source)
         {
             if (rendering || !isActiveAndEnabled || !surface || !CanObserve(source)) return;
             Vector3 normal = WorldNormal();
             if (!IsInFront(source, normal)) return;
-            if (!GeometryUtility.TestPlanesAABB(GeometryUtility.CalculateFrustumPlanes(source), surface.bounds)) return;
+            GeometryUtility.CalculateFrustumPlanes(source, frustumPlanes);
+            if (!GeometryUtility.TestPlanesAABB(frustumPlanes, surface.bounds)) return;
             if (!views.TryGetValue(source, out var view))
             {
                 var go = new GameObject("Planar Mirror Reflection", typeof(Camera), typeof(Skybox));
@@ -176,7 +197,6 @@ namespace DonkeyDungeon.PlanarMirrors
             reflected.projectionMatrix = captureProjection;
             reflected.projectionMatrix = reflected.CalculateObliqueMatrix(new Vector4(clipNormal.x, clipNormal.y, clipNormal.z, -Vector3.Dot(clipPosition, clipNormal)));
             reflected.cullingMatrix = reflected.projectionMatrix * reflected.worldToCameraMatrix;
-            var hidden = new List<KeyValuePair<Renderer, bool>>();
             bool previousCulling = GL.invertCulling;
             rendering = true;
             try
@@ -185,7 +205,7 @@ namespace DonkeyDungeon.PlanarMirrors
                 foreach (var mirror in mirrors)
                     if (mirror && mirror.surface)
                     {
-                        hidden.Add(new KeyValuePair<Renderer, bool>(mirror.surface, mirror.surface.forceRenderingOff));
+                        hiddenSurfaces.Add(new KeyValuePair<Renderer, bool>(mirror.surface, mirror.surface.forceRenderingOff));
                         mirror.surface.forceRenderingOff = true;
                     }
                 GL.invertCulling = !previousCulling;
@@ -203,7 +223,8 @@ namespace DonkeyDungeon.PlanarMirrors
             finally
             {
                 GL.invertCulling = previousCulling;
-                foreach (var entry in hidden) if (entry.Key) entry.Key.forceRenderingOff = entry.Value;
+                foreach (var entry in hiddenSurfaces) if (entry.Key) entry.Key.forceRenderingOff = entry.Value;
+                hiddenSurfaces.Clear();
                 rendering = false;
                 if (!view.hasCapture && boundView == view && surface) ApplyReflection(null);
             }

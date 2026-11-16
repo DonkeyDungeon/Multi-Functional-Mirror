@@ -18,17 +18,17 @@ namespace DonkeyDungeon.PlanarMirrors.Editor
     [InitializeOnLoad]
     internal static class ScenePreview
     {
-        static double nextUpdate;
-        static ScenePreview() { EditorApplication.update += Tick; }
-        static void Tick()
+        static ScenePreview() { SceneView.beforeSceneGui += RenderOnRepaint; }
+
+        static void RenderOnRepaint(SceneView view)
         {
-            if (EditorApplication.isPlayingOrWillChangePlaymode || EditorApplication.isCompiling || EditorApplication.isUpdating ||
-                EditorApplication.timeSinceStartup < nextUpdate) return;
-            nextUpdate = EditorApplication.timeSinceStartup + 0.1;
-            var view = SceneView.lastActiveSceneView;
-            if (!view || !view.camera) return;
-            foreach (var mirror in Object.FindObjectsByType<PlanarMirror>(FindObjectsSortMode.None))
-                if (mirror.sceneViewPreview) mirror.RenderForCamera(view.camera);
+            if (Event.current.type != EventType.Repaint || EditorApplication.isPlayingOrWillChangePlaymode ||
+                EditorApplication.isCompiling || EditorApplication.isUpdating) return;
+
+            // The Scene view has configured its camera but has not rendered it yet.
+            var activeTarget = RenderTexture.active;
+            try { PlanarMirror.RenderSceneView(view.camera); }
+            finally { RenderTexture.active = activeTarget; }
         }
     }
 }

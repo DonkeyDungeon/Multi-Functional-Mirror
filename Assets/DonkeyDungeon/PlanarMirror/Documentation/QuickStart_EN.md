@@ -21,7 +21,7 @@ The component controls capture settings. The material controls appearance. A cam
 * Clip Offset: reduces geometry leaking through the reflecting plane; excessive values can remove nearby objects.
 * Reflect Skybox / Background Color: choose the capture background.
 * Transparent Background: preserve capture alpha. Transparency depends on pipeline target format and renderer behavior; see compatibility results before relying on it.
-* Scene View Preview: editor preview, refreshed at most ten times per second.
+* Scene View Preview: editor preview, refreshed when the Scene view redraws in Edit Mode.
 
 ## Appearance
 
