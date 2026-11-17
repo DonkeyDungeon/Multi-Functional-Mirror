@@ -30,15 +30,6 @@ Choose one pipeline package per project. Toolkit mirror surfaces are excluded fr
 
 [Quick start](Assets/DonkeyDungeon/PlanarMirror/Documentation/QuickStart_EN.md) · [Build packages](#build-packages)
 
-## Build packages
-
-Clone the repository, then run the following from its root in PowerShell. Pass the paths to Unity 2022.3.51f1 and Unity 2023.2.20f1c1, respectively.
-
-```powershell
-./Tools/Export-Release.ps1 -BuiltInEditor 'C:\path\to\2022.3\Editor\Unity.exe' -SrpEditor 'C:\path\to\2023.2\Editor\Unity.exe' -Version '0.1.0-rc.1' -OutputDirectory '../Releases/0.1.0-rc.1'
-```
-
-The script stages a Built-in-only export project and a separate URP/HDRP export project, preserving the asset GUIDs. Build logs are written alongside the packages.
 
 ## License
 
