@@ -5,8 +5,8 @@ A planar reflection toolkit for Unity. Includes upright square and round mirrors
 | Render pipeline | Tested Unity editor | Pipeline package |
 | --- | --- | --- |
 | Built-in | 2022.3.51f1 | Built-in |
-| URP | 2023.2.20f1c1 | 16.0.6 |
-| HDRP | 2023.2.20f1c1 | 16.0.6 |
+| URP | 2023.2.20f1 | 16.0.6 |
+| HDRP | 2023.2.20f1 | 16.0.6 |
 
 ## Screenshots
 
