@@ -28,8 +28,6 @@ The pipeline folder names are `Builtin`, `URP`, and `HDRP`. For example, the Bui
 
 Choose one pipeline package per project. Toolkit mirror surfaces are excluded from reflection captures. See the [tested configurations and limitations](Assets/DonkeyDungeon/PlanarMirror/Documentation/Compatibility.md).
 
-[Quick start](Assets/DonkeyDungeon/PlanarMirror/Documentation/QuickStart_EN.md) · [Build packages](#build-packages)
-
 
 ## License
 
